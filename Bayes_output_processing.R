@@ -209,4 +209,4 @@ Full_results_output$perc_cis <- (abs(Full_results_output$H_est.mean)/(abs(Full_r
 ##Write out full results to file##
 ##################################
 
-write.table(Full_results_output, file = "/Users/henryertl/repos/MISC/Full_results_output_Cnr.txt", sep = "\t", row.names = F, quote = F)
+write.table(Full_results_output, file = "./Full_results_output_Cnr.txt", sep = "\t", row.names = F, quote = F)
