@@ -160,7 +160,7 @@ geom_smooth(aes(group = 1), method="loess", formula=y~x) +
 ggsave(ab, file = "./spagetti_abs.pdf", width = 15, height = 15)
 
 ######### SUPP FIGS ##########
-# FIG S1A
+# FIG S2A
 df1 <- read.delim("./z30_zhr_variants_longer.vcf_SNPsonly_30minQ.gz.recode_dm6.bed", header = F) %>% unique()
 df2 <- read.delim("./Full_results_output_RNA.bed", header = F) %>% unique()
 df2$length <- df2$V3 - df2$V2
@@ -196,7 +196,7 @@ xlab("")+
 ylab("SNV frequency in region/gene (percent)")
 ggsave(i, file = "./snv_freq_overall.pdf", width = 8, height = 11)
 
-# FIG S1B
+# FIG S2B
 df_long <- read.table("./z30_zhr_variants_longer.vcf_SNPsonly_30minQ.gz.recode_dm6_Grh_motif_p4_overlap_plusminus20.bed", header = F, sep = "\t")
 df_long[,c(9:10)] <- NULL
 df_long$pos_rel_center <- (df_long[,8] - (df_long[,4]+6))
@@ -265,13 +265,13 @@ ggsave(n, file = "./rna_corr_heatmap.pdf", width = 10, height = 10)
 atac_cistrans <- cis_trans(atac,P_est.mean,H_est.mean)
 ggsave(atac_cistrans, file = "./cistrans_atac_all.pdf", width = 15, height = 15)
 
-# FIG S5
+# FIG S6
 rna <- read.table("./Full_results_output_RNA.txt", header = T) %>% unique()
 atac_rna <- bedtoolsr::bt.closest(a=atac, b=rna, wa=TRUE, wb=TRUE) %>% as.data.frame()
 atac_vs_rna_all <- corr_plot(atac_rna,V21,V56)
 ggsave(atac_vs_rna), file = "./atac_vs_rna.pdf", width = 15, height = 15)
 
-# FIG S6
+# FIG S7
 cnr_atac_rna_Hvals <- cnr_atac_rna_Hvals[,c(1,5:8)]
 no_ab <- melt(cnr_atac_rna_Hvals, id.vars = c("locus", "class")) %>%
 ggplot(aes(x=variable, y=as.numeric(value), group=factor(locus))) +
@@ -291,3 +291,68 @@ geom_smooth(aes(group = 1), method="loess", formula=y~x) +
   theme(legend.position="none")+
   ylim(-0,1.5)
 ggsave(ab, file = "./spagetti_abs.pdf", width = 15, height = 15)
+
+# FIG S8
+## code to get DEseq2 values 
+#CnR
+rawCounts <- read.delim("./CnR_for_DEseq.txt", header = T)
+rownames(rawCounts) <- paste(rawCounts$chrom, rawCounts$start, rawCounts$end, sep = "_")
+rawCounts$chrom <- NULL
+rawCounts$start <- NULL
+rawCounts$end <- NULL
+
+sampleData <- read.delim("./cnr_deseq_sample_list.txt", header = T)
+rownames(sampleData) <- colnames(rawCounts)
+sampleData$run <- colnames(rawCounts)
+sampleData$run <- factor(sampleData$run)
+
+all(colnames(rawCounts) == rownames(sampleData))
+
+deseq2Data <- DESeqDataSetFromMatrix(countData=rawCounts, colData=sampleData, design= ~ genotype)
+deseq2Data <- DESeq(deseq2Data)
+
+parents <- results(deseq2Data, contrast=c("genotype", "zhr_p", "z30_p")) %>% as.data.frame()
+parents$ID <- rownames(parents)
+hybrids <- results(deseq2Data, contrast=c("genotype", "zhr_h", "z30_h")) %>% as.data.frame()
+hybrids$ID <- rownames(hybrids)
+#ATAC
+rawCounts <- read.delim("./ATAC_for_DEseq.txt", header = T)
+rownames(rawCounts) <- paste(rawCounts$chrom, rawCounts$start, rawCounts$end, sep = "_")
+rawCounts$chrom <- NULL
+rawCounts$start <- NULL
+rawCounts$end <- NULL
+
+sampleData <- read.delim("./cnr_deseq_sample_list.txt", header = T)
+rownames(sampleData) <- colnames(rawCounts)
+sampleData$run <- colnames(rawCounts)
+sampleData$run <- factor(sampleData$run)
+
+all(colnames(rawCounts) == rownames(sampleData))
+
+deseq2Data <- DESeqDataSetFromMatrix(countData=rawCounts, colData=sampleData, design= ~ genotype)
+deseq2Data <- DESeq(deseq2Data)
+
+parents <- results(deseq2Data, contrast=c("genotype", "zhr_p", "z30_p")) %>% as.data.frame()
+parents$ID <- rownames(parents)
+hybrids <- results(deseq2Data, contrast=c("genotype", "zhr_h", "z30_h")) %>% as.data.frame()
+hybrids$ID <- rownames(hybrids)
+#RNA 
+rawCounts <- read.delim("./RNA_for_DEseq.txt", header = T) %>% na.omit()
+rownames(rawCounts) <- rawCounts$gene
+rawCounts$gene <- NULL
+
+sampleData <- read.delim("./cnr_deseq_sample_list.txt", header = T)
+rownames(sampleData) <- colnames(rawCounts)
+sampleData$run <- colnames(rawCounts)
+sampleData$run <- factor(sampleData$run)
+
+all(colnames(rawCounts) == rownames(sampleData))
+
+deseq2Data <- DESeqDataSetFromMatrix(countData=rawCounts, colData=sampleData, design= ~ genotype)
+deseq2Data <- DESeq(deseq2Data)
+
+parents <- results(deseq2Data, contrast=c("genotype", "zhr_p", "z30_p")) %>% as.data.frame()
+parents$ID <- rownames(parents)
+hybrids <- results(deseq2Data, contrast=c("genotype", "zhr_h", "z30_h")) %>% as.data.frame()
+hybrids$ID <- rownames(hybrids)
+
